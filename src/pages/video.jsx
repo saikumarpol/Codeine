@@ -50,7 +50,7 @@ export default function VideoPage() {
           className="cursor-pointer bg-gray-900/80 rounded-3xl shadow-2xl border border-gray-800 flex flex-col items-center p-6 backdrop-blur-md h-full transition hover:scale-105 hover:shadow-xl"
         >
           <img
-            src="/assests/python.png"
+            src="/assests/python.jpeg"
             alt="Python Tutorial"
             className="w-full h-48 object-cover rounded-xl mb-4 border border-gray-700"
           />

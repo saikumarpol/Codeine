@@ -36,7 +36,7 @@ export default function Register() {
           />
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white text-center">
             Unlock Your <br />
-            Coding <span className="text-[#1e90ff]">Performance</span>
+            Coding <span className="text-[#1e90ff]">Performance <span className="text-white">With</span> codeine</span>
           </h2>
         </div>
 

@@ -35,7 +35,7 @@ export default function Login() {
           />
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white text-center">
             Unlock Your <br />
-            Coding <span className="text-[#1e90ff]">Performance</span>
+            Coding <span className="text-[#1e90ff]">Performance <span className="text-white">With</span> codeine</span>
           </h2>
         </div>
 
@@ -43,7 +43,7 @@ export default function Login() {
         <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 md:p-12">
           <div className="w-full max-w-md">
             <h2 className="text-3xl font-extrabold text-white mb-2 text-center">
-              Welcome to <span className="text-[#1e90ff]">Code Quest</span>
+              Welcome to <span className="text-[#1e90ff]">Codeine</span>
             </h2>
             <p className="text-gray-300 mb-8 text-sm text-center">
               Unlock Your Coding Performance

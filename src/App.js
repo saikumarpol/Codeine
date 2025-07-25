@@ -98,6 +98,18 @@ export default function App() {
         {/* Redirect unknown routes */}
         <Route path="*" element={<RedirectTo route={initialRoute} />} />
       </Routes>
+      <footer className="absolute bottom-4 w-full text-center text-gray-400 text-sm">
+  © {new Date().getFullYear()} Codeine — Developed by{" "}
+  <a 
+    href="https://www.linkedin.com/in/sai-kumar-pola-3993851a1/" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    className="text-gray-200 hover:underline hover:text-blue-400 transition-colors"
+  >
+    Sai Kumar Pola
+  </a>
+</footer>
+
     </Router>
   );
 }

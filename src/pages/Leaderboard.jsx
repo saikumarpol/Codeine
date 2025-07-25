@@ -7,7 +7,7 @@ export default function Leaderboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get("https://ide-backend-3wz1.onrender.com/leaderboard").then((res) => setData(res.data));
+    axios.get("https://ide-backend-0agn.onrender.com/leaderboard").then((res) => setData(res.data));
   }, []);
 
   return (

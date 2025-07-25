@@ -11,7 +11,7 @@ export default function Register() {
 
   const handleRegister = async () => {
     try {
-      const res = await axios.post("https://ide-backend-3wz1.onrender.com/auth/register", {
+      const res = await axios.post("https://ide-backend-0agn.onrender.com/auth/register", {
         rollNo,
         name,
         password,

@@ -19,7 +19,7 @@ export default function App() {
 
   const fetchSolvedProblems = async () => {
     try {
-      const res = await axios.get(`https://ide-backend-3wz1.onrender.com/user/${rollNo}`);
+      const res = await axios.get(`https://ide-backend-0agn.onrender.com/user/${rollNo}`);
       setSolved(res.data.solvedProblems || []);
     } catch (error) {
       console.error("Error fetching solved problems", error);

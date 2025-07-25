@@ -18,7 +18,7 @@ export default function Profile() {
   useEffect(() => {
     if (!rollNo) return;
     setIsLoading(true);
-    fetch("https://ide-backend-3wz1.onrender.com/leaderboard")
+    fetch("https://ide-backend-0agn.onrender.com/leaderboard")
       .then(res => res.json())
       .then(data => {
         const idx = data.findIndex(u => u.rollNo === rollNo);

@@ -9,7 +9,7 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post("https://ide-backend-3wz1.onrender.com/auth/login", {
+      const res = await axios.post("https://ide-backend-0agn.onrender.com/auth/login", {
         rollNo,
         password,
       });

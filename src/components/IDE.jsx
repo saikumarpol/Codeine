@@ -21,7 +21,7 @@ export default function IDE() {
   useEffect(() => {
     const rollNo = localStorage.getItem("rollNo");
     if (rollNo) {
-      axios.get(`https://ide-backend-3wz1.onrender.com/user/${rollNo}`).then((res) => {
+      axios.get(`https://ide-backend-0agn.onrender.com/user/${rollNo}`).then((res) => {
         const solved = res.data.solvedProblems || [];
         setCompleted(solved);
         const firstUnsolvedIndex = problems.findIndex(
@@ -138,7 +138,7 @@ output_text
 
       try {
         const rollNo = localStorage.getItem("rollNo");
-        await axios.post("https://ide-backend-3wz1.onrender.com/updateProgress", {
+        await axios.post("https://ide-backend-0agn.onrender.com/updateProgress", {
           rollNo,
           problemId,
         });

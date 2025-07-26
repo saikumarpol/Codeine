@@ -9,7 +9,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (isLoading) return; // Prevent multiple clicks
+    if (isLoading) return;
     setIsLoading(true);
     setMsg("");
 
@@ -29,9 +29,16 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-900 px-4">
-      <div className="bg-gray-800 rounded-3xl shadow-2xl border border-gray-700 flex flex-col md:flex-row w-full max-w-4xl overflow-hidden">
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-gray-900 px-4">
+      {/* Full Page Loader */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
+          <div className="w-16 h-16 border-4 border-[#1e90ff] border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-white font-semibold text-lg">Logging in...</p>
+        </div>
+      )}
 
+      <div className="bg-gray-800 rounded-3xl shadow-2xl border border-gray-700 flex flex-col md:flex-row w-full max-w-4xl overflow-hidden">
         {/* Image Section */}
         <div className="w-full md:w-1/2 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 p-8">
           <img
@@ -91,13 +98,11 @@ export default function Login() {
 
             {/* Login Button */}
             <button
-              className={`w-full bg-[#1e90ff] hover:bg-[#1877c9] text-white font-semibold py-2 rounded-lg mb-6 transition-colors duration-200 text-lg shadow ${
-                isLoading ? "opacity-60 cursor-not-allowed" : ""
-              }`}
+              className="w-full bg-[#1e90ff] hover:bg-[#1877c9] text-white font-semibold py-2 rounded-lg mb-6 transition-colors duration-200 text-lg shadow disabled:opacity-60"
               onClick={handleLogin}
               disabled={isLoading}
             >
-              {isLoading ? "Logging in..." : "Login"}
+              Login
             </button>
 
             {/* Footer Links */}

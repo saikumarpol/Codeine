@@ -8,6 +8,7 @@ module.exports = {
       animation: {
         "slide-in": "slideIn 0.3s ease-in-out",
         "slide-in-left": "slideInLeft 0.3s ease-in-out",
+        'spin-slow': 'spin 3s linear infinite',
       },
       keyframes: {
         slideIn: {

@@ -6,8 +6,13 @@ export default function Login() {
   const [rollNo, setRollNo] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (isLoading) return; // Prevent multiple clicks
+    setIsLoading(true);
+    setMsg("");
+
     try {
       const res = await axios.post("https://ide-backend-0agn.onrender.com/auth/login", {
         rollNo,
@@ -19,14 +24,15 @@ export default function Login() {
       window.location.href = "/home";
     } catch (err) {
       setMsg(err.response?.data?.message || "Error");
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gray-900 px-4">
       <div className="bg-gray-800 rounded-3xl shadow-2xl border border-gray-700 flex flex-col md:flex-row w-full max-w-4xl overflow-hidden">
-        
-        {/* Image Section — appears first on all screen sizes */}
+
+        {/* Image Section */}
         <div className="w-full md:w-1/2 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 p-8">
           <img
             src="/assests/login.png"
@@ -39,7 +45,7 @@ export default function Login() {
           </h2>
         </div>
 
-        {/* Form Section — always comes after image */}
+        {/* Form Section */}
         <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 md:p-12">
           <div className="w-full max-w-md">
             <h2 className="text-3xl font-extrabold text-white mb-2 text-center">
@@ -85,10 +91,13 @@ export default function Login() {
 
             {/* Login Button */}
             <button
-              className="w-full bg-[#1e90ff] hover:bg-[#1877c9] text-white font-semibold py-2 rounded-lg mb-6 transition-colors duration-200 text-lg shadow"
+              className={`w-full bg-[#1e90ff] hover:bg-[#1877c9] text-white font-semibold py-2 rounded-lg mb-6 transition-colors duration-200 text-lg shadow ${
+                isLoading ? "opacity-60 cursor-not-allowed" : ""
+              }`}
               onClick={handleLogin}
+              disabled={isLoading}
             >
-              Login
+              {isLoading ? "Logging in..." : "Login"}
             </button>
 
             {/* Footer Links */}

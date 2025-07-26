@@ -1,86 +1,167 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
+import { motion } from "framer-motion";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 export default function Leaderboard() {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("problemsSolved");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
-    axios
-      .get("https://ide-backend-0agn.onrender.com/leaderboard")
-      .then((res) => setData(res.data))
-      .finally(() => setIsLoading(false));
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const res = await axios.get("https://ide-backend-0agn.onrender.com/leaderboard");
+        setData(res.data);
+        setLastUpdated(
+          new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+        );
+      } catch (err) {
+        setError("Failed to fetch leaderboard data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
+  const filteredData = useMemo(() => {
+    let result = [...data];
+    if (searchTerm) {
+      result = result.filter(
+        (u) =>
+          u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          u.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    result.sort((a, b) => {
+      const multiplier = sortOrder === "desc" ? -1 : 1;
+      return multiplier * (a[sortBy] - b[sortBy]);
+    });
+    return result;
+  }, [data, searchTerm, sortBy, sortOrder]);
+
+  const getMedal = (rank) => {
+    if (rank === 1) return "🥇";
+    if (rank === 2) return "🥈";
+    if (rank === 3) return "🥉";
+    return rank;
+  };
+
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 text-gray-200 px-4">
-      {/* Full Page Loader */}
+    <div className="min-h-screen bg-gradient-to-tr from-[#0a0f1e] via-[#12192d] to-[#0a0f1e] text-white px-4 py-8">
       {isLoading && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
-          <div className="relative w-16 h-16">
-            <div className="absolute w-full h-full border-4 border-t-transparent border-[#1e90ff] rounded-full animate-spin"></div>
-            <div className="absolute w-10 h-10 top-3 left-3 border-4 border-t-transparent border-[#ffb703] rounded-full animate-spin-slow"></div>
-          </div>
-          <p className="mt-4 text-white font-semibold text-lg">Fetching Leaderboard...</p>
+        <div className="flex items-center justify-center h-screen">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
 
-      {/* Main Content */}
-      {!isLoading && (
-        <div className="bg-gray-900/80 rounded-3xl shadow-2xl border border-gray-800 flex flex-col w-full max-w-5xl p-6 sm:p-8 backdrop-blur-md">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg flex items-center gap-2">
-              <span className="text-yellow-400 text-4xl">🏆</span> Leaderboard
-            </h2>
+      {!isLoading && !error && (
+        <div className="max-w-6xl mx-auto space-y-10">
+          {/* HEADER */}
+          <div className="flex flex-col items-center text-center px-4">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg">
+              Leaderboard
+            </h1>
+            <p className="text-gray-400 mt-2">
+              Top performers • Last updated: {lastUpdated}
+            </p>
           </div>
 
-          {/* Table (Responsive) */}
-          <div className="overflow-x-auto rounded-xl border border-gray-700 shadow-inner">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-700/80">
+          {/* SEARCH + SORT */}
+          <div className="flex flex-col sm:flex-row gap-4 px-4">
+            <div className="relative flex-1">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name or roll number..."
+                className="w-full pl-10 pr-4 py-2 bg-gray-900/70 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 sm:w-auto w-full justify-between sm:justify-start">
+              <select
+                className="px-4 py-2 bg-gray-900/70 rounded-lg focus:ring-2 focus:ring-blue-500 w-1/2 sm:w-auto"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="problemsSolved">Problems Solved</option>
+                <option value="streak">Streak</option>
+              </select>
+              <button
+                className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 w-1/2 sm:w-auto"
+                onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
+              >
+                {sortOrder === "desc" ? "↓ Desc" : "↑ Asc"}
+              </button>
+            </div>
+          </div>
+
+          {/* PODIUM STYLE */}
+          <div className="flex flex-col sm:flex-row sm:justify-center sm:items-end gap-6 mt-10 px-4">
+            {filteredData.slice(0, 3).map((u, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`relative flex flex-col items-center text-center bg-gray-900/60 backdrop-blur-md rounded-xl shadow-lg px-6 pt-10 pb-6 border w-full sm:w-auto ${
+                  i === 0
+                    ? "border-yellow-400 sm:h-[230px]"
+                    : i === 1
+                    ? "border-gray-400 sm:h-[200px]"
+                    : "border-orange-400 sm:h-[180px]"
+                }`}
+              >
+                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-2xl font-bold">
+                  {u.name.charAt(0)}
+                </div>
+                <p className="mt-3 font-semibold text-xl">{u.name}</p>
+                <p className="text-gray-400 text-sm">Roll No: {u.rollNo}</p>
+                <p className="text-green-400 mt-1">{u.problemsSolved} Solved</p>
+                <p className="text-orange-400 text-sm">🔥 {u.streak}</p>
+                <span className="absolute -top-5 text-3xl">{getMedal(i + 1)}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* TABLE */}
+          <div className="overflow-x-auto rounded-xl bg-gray-900/70 backdrop-blur-md shadow-2xl border border-gray-800 mx-4">
+            <table className="w-full text-left min-w-[500px]">
+              <thead className="bg-gray-800/60 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 text-yellow-300 font-bold text-base sm:text-lg">Rank</th>
-                  <th className="px-4 py-3 text-blue-300 font-bold text-base sm:text-lg">Name</th>
-                  <th className="px-4 py-3 text-green-300 font-bold text-base sm:text-lg">Roll No</th>
-                  <th className="px-4 py-3 text-pink-300 font-bold text-base sm:text-lg">Problems Solved</th>
-                  <th className="px-4 py-3 text-orange-300 font-bold text-base sm:text-lg">Streak 🔥</th>
+                  <th className="px-4 py-3 text-yellow-300">Rank</th>
+                  <th className="px-4 py-3 text-blue-300">Name</th>
+                  <th className="px-4 py-3 text-green-300">Roll No</th>
+                  <th className="px-4 py-3 text-pink-300">Solved</th>
+                  <th className="px-4 py-3 text-orange-300">Streak</th>
                 </tr>
               </thead>
               <tbody>
-                {data.length > 0 ? (
-                  data.map((u, i) => (
-                    <tr
-                      key={i}
-                      className={`transition-colors ${
-                        i === 0
-                          ? "bg-yellow-400/80 text-black font-bold"
-                          : i === 1
-                          ? "bg-gray-400/80 text-black font-bold"
-                          : i === 2
-                          ? "bg-orange-400/80 text-black font-bold"
-                          : "hover:bg-gray-700/60"
-                      }`}
-                    >
-                      <td className="px-4 py-3 text-sm sm:text-lg">{i + 1}</td>
-                      <td className="px-4 py-3 text-sm sm:text-lg flex items-center gap-2">
-                        <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-700 flex items-center justify-center text-white font-bold text-base sm:text-xl shadow-lg">
-                          {u.name.charAt(0)}
-                        </span>
-                        <span className="truncate">{u.name}</span>
-                      </td>
-                      <td className="px-4 py-3 text-sm sm:text-lg">{u.rollNo}</td>
-                      <td className="px-4 py-3 text-sm sm:text-lg">{u.problemsSolved}</td>
-                      <td className="px-4 py-3 text-sm sm:text-lg">{u.streak}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="px-4 py-8 text-center text-gray-400 text-lg">
-                      No data available
+                {filteredData.map((u, i) => (
+                  <motion.tr
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="hover:bg-gray-800/40 transition"
+                  >
+                    <td className="px-4 py-3">{getMedal(i + 1)}</td>
+                    <td className="px-4 py-3 flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
+                        {u.name.charAt(0)}
+                      </span>
+                      {u.name}
                     </td>
-                  </tr>
-                )}
+                    <td className="px-4 py-3">{u.rollNo}</td>
+                    <td className="px-4 py-3">{u.problemsSolved}</td>
+                    <td className="px-4 py-3">{u.streak}</td>
+                  </motion.tr>
+                ))}
               </tbody>
             </table>
           </div>

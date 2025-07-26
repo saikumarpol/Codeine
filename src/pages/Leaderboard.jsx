@@ -12,15 +12,30 @@ export default function Leaderboard() {
   const [sortOrder, setSortOrder] = useState("desc");
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  const quotes = [
+    "Code is like humor. When you have to explain it, it’s bad.",
+    "First, solve the problem. Then, write the code.",
+    "Dream in code, build in passion, deploy in success.",
+    "Your only limit is your imagination — and maybe semicolons.",
+    "Every bug you fix is a step closer to mastery."
+  ];
+  const [quoteIndex, setQuoteIndex] = useState(0);
+
+  // Change quote every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
+    }, 5000); // 10 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         const res = await axios.get("https://ide-backend-0agn.onrender.com/leaderboard");
         setData(res.data);
-        setLastUpdated(
-          new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-        );
+        setLastUpdated(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
       } catch (err) {
         setError("Failed to fetch leaderboard data.");
       } finally {
@@ -63,17 +78,27 @@ export default function Leaderboard() {
 
       {!isLoading && !error && (
         <div className="max-w-6xl mx-auto space-y-10">
-          {/* HEADER */}
+          {/* Branding Header */}
           <div className="flex flex-col items-center text-center px-4">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg">
-              Leaderboard
+            <h1 className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg">
+              Codeine Leaderboard
             </h1>
-            <p className="text-gray-400 mt-2">
+            <p className="text-gray-400 mt-2 text-sm sm:text-base">
               Top performers • Last updated: {lastUpdated}
             </p>
+            <motion.p
+              key={quoteIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.6 }}
+              className="text-yellow-400 mt-4 text-lg italic font-medium"
+            >
+              “{quotes[quoteIndex]}”
+            </motion.p>
           </div>
 
-          {/* SEARCH + SORT */}
+          {/* Search & Sort Controls */}
           <div className="flex flex-col sm:flex-row gap-4 px-4">
             <div className="relative flex-1">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -103,7 +128,7 @@ export default function Leaderboard() {
             </div>
           </div>
 
-          {/* PODIUM STYLE */}
+          {/* Podium */}
           <div className="flex flex-col sm:flex-row sm:justify-center sm:items-end gap-6 mt-10 px-4">
             {filteredData.slice(0, 3).map((u, i) => (
               <motion.div
@@ -130,7 +155,7 @@ export default function Leaderboard() {
             ))}
           </div>
 
-          {/* TABLE */}
+          {/* Table */}
           <div className="overflow-x-auto rounded-xl bg-gray-900/70 backdrop-blur-md shadow-2xl border border-gray-800 mx-4">
             <table className="w-full text-left min-w-[500px]">
               <thead className="bg-gray-800/60 sticky top-0">
@@ -139,7 +164,7 @@ export default function Leaderboard() {
                   <th className="px-4 py-3 text-blue-300">Name</th>
                   <th className="px-4 py-3 text-green-300">Roll No</th>
                   <th className="px-4 py-3 text-pink-300">Solved</th>
-                  <th className="px-4 py-3 text-orange-300">Streak</th>
+                  <th className="px-4 py-3 text-orange-300">Streak🔥</th>
                 </tr>
               </thead>
               <tbody>
@@ -167,6 +192,8 @@ export default function Leaderboard() {
           </div>
         </div>
       )}
+      
     </div>
+    
   );
 }

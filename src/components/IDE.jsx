@@ -16,6 +16,7 @@ export default function IDE() {
   const [warning, setWarning] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [editorKey, setEditorKey] = useState(0); // <-- Important for resetting Editor
 
   // Fetch user solved problems from MongoDB
   useEffect(() => {
@@ -27,19 +28,13 @@ export default function IDE() {
         const firstUnsolvedIndex = problems.findIndex(
           (p) => !solved.includes(p.id.toString())
         );
-        setCurrentIdx(firstUnsolvedIndex !== -1 ? firstUnsolvedIndex : 0);
-        setCode(
-          problems[firstUnsolvedIndex !== -1 ? firstUnsolvedIndex : 0].starterCode
-        );
+        const idx = firstUnsolvedIndex !== -1 ? firstUnsolvedIndex : 0;
+        setCurrentIdx(idx);
+        setCode(problems[idx].starterCode);
+        setEditorKey((k) => k + 1); // reset editor
       });
     }
   }, []);
-
-  useEffect(() => {
-    setCode(problems[currentIdx].starterCode);
-    setResults([]);
-    setFinalResult("");
-  }, [currentIdx]);
 
   useEffect(() => {
     const loadPyodideAndPackages = async () => {
@@ -104,11 +99,12 @@ output_text
     const nextUnsolvedIndex = problems.findIndex(
       (p, idx) => !completed.includes(p.id.toString()) && idx !== currentIdx
     );
-    if (nextUnsolvedIndex !== -1) {
-      setCurrentIdx(nextUnsolvedIndex);
-    } else {
-      setCurrentIdx(0);
-    }
+    const nextIndex = nextUnsolvedIndex !== -1 ? nextUnsolvedIndex : 0;
+    setCurrentIdx(nextIndex);
+    setCode(problems[nextIndex].starterCode);
+    setResults([]);
+    setFinalResult("");
+    setEditorKey((k) => k + 1); // force re-render of editor
     setSidebarOpen(false);
   };
 
@@ -204,6 +200,10 @@ output_text
                 }`}
                 onClick={() => {
                   setCurrentIdx(idx);
+                  setCode(problems[idx].starterCode);
+                  setResults([]);
+                  setFinalResult("");
+                  setEditorKey((k) => k + 1);
                   setSidebarOpen(false);
                 }}
               >
@@ -237,6 +237,7 @@ output_text
           {/* Code Editor */}
           <div className="w-full bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-700">
             <Editor
+              key={editorKey} // <-- Fix to reset code when problem changes
               height="400px"
               language="python"
               theme="vs-dark"

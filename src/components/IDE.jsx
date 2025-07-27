@@ -401,6 +401,7 @@ import {
   FiPlay,
   FiCheckCircle,
   FiXCircle,
+  FiLock,
 } from "react-icons/fi";
 import { problems } from "../data/problems";
 
@@ -420,21 +421,25 @@ export default function IDE() {
   useEffect(() => {
     const rollNo = localStorage.getItem("rollNo");
     if (rollNo) {
-      axios.get(`https://ide-backend-0agn.onrender.com/user/${rollNo}`).then((res) => {
-        const solved = res.data.solvedProblems || [];
-        setCompleted(solved);
+      axios
+        .get(`https://ide-backend-0agn.onrender.com/user/${rollNo}`)
+        .then((res) => {
+          const solved = res.data.solvedProblems || [];
+          setCompleted(solved);
 
-        const firstUnsolvedIndex = problems.findIndex(
-          (p) => !solved.includes(p.id.toString())
-        );
-        const idx = firstUnsolvedIndex !== -1 ? firstUnsolvedIndex : 0;
+          const firstUnsolvedIndex = problems.findIndex(
+            (p) => !solved.includes(p.id.toString())
+          );
+          const idx = firstUnsolvedIndex !== -1 ? firstUnsolvedIndex : 0;
 
-        const savedData = JSON.parse(localStorage.getItem("savedCodes") || "{}");
-        const savedCode = savedData[`${rollNo}-${problems[idx].id}`];
-        setCode(savedCode || problems[idx].starterCode || "");
-        setCurrentIdx(idx);
-        setEditorKey((prev) => prev + 1);
-      });
+          const savedData = JSON.parse(
+            localStorage.getItem("savedCodes") || "{}"
+          );
+          const savedCode = savedData[`${rollNo}-${problems[idx].id}`];
+          setCode(savedCode || problems[idx].starterCode || "");
+          setCurrentIdx(idx);
+          setEditorKey((prev) => prev + 1);
+        });
     }
   }, []);
 
@@ -625,7 +630,11 @@ output_text
                   isSelected
                     ? "bg-gray-700 border-blue-500"
                     : "border-transparent"
-                } ${!isUnlocked ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-700/80"}`}
+                } ${
+                  !isUnlocked
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-gray-700/80"
+                }`}
                 onClick={() => {
                   if (!isUnlocked) return;
                   setCurrentIdx(idx);
@@ -642,12 +651,16 @@ output_text
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <span
-                    className={`text-lg ${
-                      isSolved ? "text-green-400" : "text-gray-400"
-                    }`}
-                  >
-                    {isSolved ? <FiCheck /> : <FiCircle />}
+                  <span className="text-lg">
+                    {isUnlocked ? (
+                      isSolved ? (
+                        <FiCheck className="text-green-400" />
+                      ) : (
+                        <FiCircle className="text-gray-400" />
+                      )
+                    ) : (
+                      <FiLock className="text-gray-500" />
+                    )}
                   </span>
                   <span>
                     {idx + 1}. {p.title}

@@ -8,6 +8,7 @@ export default function Leaderboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("problemsSolved");
   const [sortOrder, setSortOrder] = useState("desc");
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -20,7 +21,7 @@ export default function Leaderboard() {
   ];
   const [quoteIndex, setQuoteIndex] = useState(0);
 
-  // Change quote every 5 seconds
+  // Quote rotation
   useEffect(() => {
     const interval = setInterval(() => {
       setQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
@@ -28,7 +29,7 @@ export default function Leaderboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch leaderboard data
+  // Fetch leaderboard
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -45,10 +46,10 @@ export default function Leaderboard() {
     fetchData();
   }, []);
 
-  const rankedData = useMemo(() => {
+  // Sorting + filtering with tie-breaker
+  const filteredData = useMemo(() => {
     let result = [...data];
 
-    // Search filter
     if (searchTerm) {
       result = result.filter(
         (u) =>
@@ -57,23 +58,21 @@ export default function Leaderboard() {
       );
     }
 
-    // Sort: problemsSolved desc -> earliest lastSolvedDate
     result.sort((a, b) => {
+      // Primary sort
       if (a.problemsSolved !== b.problemsSolved) {
         return sortOrder === "desc"
           ? b.problemsSolved - a.problemsSolved
           : a.problemsSolved - b.problemsSolved;
       }
-      const dateA = new Date(a.lastSolvedDate);
-      const dateB = new Date(b.lastSolvedDate);
-      return dateA - dateB;
+      // Tie-breaker using lastSolvedDate (earlier wins)
+      if (a.lastSolvedDate && b.lastSolvedDate) {
+        return new Date(a.lastSolvedDate) - new Date(b.lastSolvedDate);
+      }
+      return 0;
     });
 
-    // Assign ranks permanently
-    return result.map((user, index) => ({
-      ...user,
-      rank: index + 1,
-    }));
+    return result;
   }, [data, searchTerm, sortOrder]);
 
   const getMedal = (rank) => {
@@ -106,7 +105,6 @@ export default function Leaderboard() {
                 key={quoteIndex}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.6 }}
                 className="text-yellow-400 mt-4 text-lg italic font-medium"
               >
@@ -126,17 +124,19 @@ export default function Leaderboard() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <button
-                className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700"
-                onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
-              >
-                {sortOrder === "desc" ? "↓ Desc" : "↑ Asc"}
-              </button>
+              <div className="flex gap-2 sm:w-auto w-full justify-between sm:justify-start">
+                <button
+                  className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 w-1/2 sm:w-auto"
+                  onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
+                >
+                  {sortOrder === "desc" ? "↓ Desc" : "↑ Asc"}
+                </button>
+              </div>
             </div>
 
             {/* Podium */}
             <div className="flex flex-col sm:flex-row sm:justify-center sm:items-end gap-6 mt-10 px-4">
-              {rankedData.slice(0, 3).map((u, i) => (
+              {filteredData.slice(0, 3).map((u, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 30 }}
@@ -153,11 +153,10 @@ export default function Leaderboard() {
                     {u.name.charAt(0)}
                   </div>
                   <p className="mt-3 font-semibold text-xl">{u.name}</p>
-                  <p className="text-gray-400 text-sm">Rank: #{u.rank}</p>
                   <p className="text-gray-400 text-sm">Roll No: {u.rollNo}</p>
                   <p className="text-green-400 mt-1">{u.problemsSolved} Solved</p>
                   <p className="text-orange-400 text-sm">🔥 {u.streak}</p>
-                  <span className="absolute -top-5 text-3xl">{getMedal(u.rank)}</span>
+                  <span className="absolute -top-5 text-3xl">{getMedal(i + 1)}</span>
                 </motion.div>
               ))}
             </div>
@@ -175,14 +174,14 @@ export default function Leaderboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rankedData.map((u, i) => (
+                  {filteredData.map((u, i) => (
                     <motion.tr
                       key={i}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       className="hover:bg-gray-800/40 transition"
                     >
-                      <td className="px-4 py-3">{getMedal(u.rank)}</td>
+                      <td className="px-4 py-3">{getMedal(i + 1)}</td>
                       <td className="px-4 py-3 flex items-center gap-2">
                         <span className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
                           {u.name.charAt(0)}

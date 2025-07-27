@@ -8,7 +8,6 @@ export default function Leaderboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("problemsSolved");
   const [sortOrder, setSortOrder] = useState("desc");
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -21,7 +20,7 @@ export default function Leaderboard() {
   ];
   const [quoteIndex, setQuoteIndex] = useState(0);
 
-  // Quote rotation
+  // Change quote every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
@@ -49,7 +48,6 @@ export default function Leaderboard() {
   // Sorting + filtering with tie-breaker
   const filteredData = useMemo(() => {
     let result = [...data];
-
     if (searchTerm) {
       result = result.filter(
         (u) =>
@@ -57,7 +55,6 @@ export default function Leaderboard() {
           u.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
     result.sort((a, b) => {
       // Primary sort
       if (a.problemsSolved !== b.problemsSolved) {
@@ -71,7 +68,6 @@ export default function Leaderboard() {
       }
       return 0;
     });
-
     return result;
   }, [data, searchTerm, sortOrder]);
 

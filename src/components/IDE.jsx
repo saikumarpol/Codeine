@@ -1,43 +1,58 @@
+
+
 // import Editor from "@monaco-editor/react";
 // import Problem from "./Problem";
 // import { useEffect, useState } from "react";
 // import axios from "axios";
 // import confetti from "canvas-confetti";
-// import { FiCheck, FiCircle, FiMenu, FiPlay, FiCheckCircle, FiXCircle } from "react-icons/fi";
+// import {
+//   FiCheck,
+//   FiCircle,
+//   FiMenu,
+//   FiPlay,
+//   FiCheckCircle,
+//   FiXCircle,
+// } from "react-icons/fi";
 // import { problems } from "../data/problems";
 
 // export default function IDE() {
 //   const [currentIdx, setCurrentIdx] = useState(0);
 //   const [completed, setCompleted] = useState([]);
 //   const [pyodide, setPyodide] = useState(null);
-//   const [code, setCode] = useState(problems[0].starterCode);
+//   const [code, setCode] = useState(problems[0]?.starterCode || "");
 //   const [results, setResults] = useState([]);
 //   const [finalResult, setFinalResult] = useState("");
 //   const [warning, setWarning] = useState("");
 //   const [sidebarOpen, setSidebarOpen] = useState(false);
 //   const [isLoading, setIsLoading] = useState(false);
-//   const [editorKey, setEditorKey] = useState(0); // <-- Important for resetting Editor
+//   const [editorKey, setEditorKey] = useState(0);
 
-//   // Fetch user solved problems from MongoDB
+//   // ---------- INITIAL LOAD ----------
 //   useEffect(() => {
 //     const rollNo = localStorage.getItem("rollNo");
 //     if (rollNo) {
 //       axios.get(`https://ide-backend-0agn.onrender.com/user/${rollNo}`).then((res) => {
 //         const solved = res.data.solvedProblems || [];
 //         setCompleted(solved);
+
 //         const firstUnsolvedIndex = problems.findIndex(
 //           (p) => !solved.includes(p.id.toString())
 //         );
 //         const idx = firstUnsolvedIndex !== -1 ? firstUnsolvedIndex : 0;
+
+//         // ---- Check if saved code exists ----
+//         const savedData = JSON.parse(localStorage.getItem("savedCodes") || "{}");
+//         const savedCode = savedData[`${rollNo}-${problems[idx].id}`];
+//         setCode(savedCode || problems[idx].starterCode || "");
 //         setCurrentIdx(idx);
-//         setCode(problems[idx].starterCode);
-//         setEditorKey((k) => k + 1); // reset editor
+//         setEditorKey((prev) => prev + 1);
 //       });
 //     }
 //   }, []);
 
+//   // ---------- LOAD PYODIDE ----------
 //   useEffect(() => {
-//     const loadPyodideAndPackages = async () => {
+//     const loadPyodide = async () => {
 //       if (!window.loadPyodide) {
 //         console.error("Pyodide script not loaded - add it in index.html");
 //         return;
@@ -47,11 +62,13 @@
 //       });
 //       setPyodide(pyodideInstance);
 //     };
-//     loadPyodideAndPackages();
+//     loadPyodide();
 //   }, []);
 
-//   const showWarning = () => {
-//     setWarning("⚠️ Pasting is not allowed! Please write code yourself.");
+//   const showWarning = (
+//     msg = "⚠️ Pasting is not allowed! Please write code yourself."
+//   ) => {
+//     setWarning(msg);
 //     setTimeout(() => setWarning(""), 3000);
 //   };
 
@@ -78,8 +95,16 @@
 //     }
 //   };
 
+//   const validateCode = () => {
+//     if (!code || code.trim() === "") {
+//       showWarning("⚠️ Please write some Python code before running.");
+//       return false;
+//     }
+//     return true;
+//   };
+
 //   const runCode = async () => {
-//     if (!pyodide) return;
+//     if (!pyodide || !validateCode()) return;
 //     setIsLoading(true);
 //     const firstCase = problems[currentIdx].testCases[0];
 //     const output = await runSingle(firstCase.input);
@@ -96,20 +121,24 @@
 //   };
 
 //   const goToNextUnsolved = () => {
-//     const nextUnsolvedIndex = problems.findIndex(
+//     const nextUnsolved = problems.findIndex(
 //       (p, idx) => !completed.includes(p.id.toString()) && idx !== currentIdx
 //     );
-//     const nextIndex = nextUnsolvedIndex !== -1 ? nextUnsolvedIndex : 0;
+//     const nextIndex = nextUnsolved !== -1 ? nextUnsolved : 0;
+//     const rollNo = localStorage.getItem("rollNo");
+//     const savedData = JSON.parse(localStorage.getItem("savedCodes") || "{}");
+//     const savedCode = savedData[`${rollNo}-${problems[nextIndex].id}`];
+
 //     setCurrentIdx(nextIndex);
-//     setCode(problems[nextIndex].starterCode);
+//     setCode(savedCode || problems[nextIndex].starterCode || "");
 //     setResults([]);
 //     setFinalResult("");
-//     setEditorKey((k) => k + 1); // force re-render of editor
+//     setEditorKey((prev) => prev + 1);
 //     setSidebarOpen(false);
 //   };
 
 //   const submitCode = async () => {
-//     if (!pyodide) return;
+//     if (!pyodide || !validateCode()) return;
 //     setIsLoading(true);
 //     let allPassed = true;
 //     const tempResults = [];
@@ -128,12 +157,18 @@
 
 //     if (allPassed) {
 //       const problemId = problems[currentIdx].id;
+//       const rollNo = localStorage.getItem("rollNo");
+
+//       // ---- Save student's code locally ----
+//       const savedData = JSON.parse(localStorage.getItem("savedCodes") || "{}");
+//       savedData[`${rollNo}-${problemId}`] = code;
+//       localStorage.setItem("savedCodes", JSON.stringify(savedData));
+
 //       if (!completed.includes(problemId.toString())) {
 //         setCompleted((prev) => [...prev, problemId.toString()]);
 //       }
 
 //       try {
-//         const rollNo = localStorage.getItem("rollNo");
 //         await axios.post("https://ide-backend-0agn.onrender.com/updateProgress", {
 //           rollNo,
 //           problemId,
@@ -141,7 +176,7 @@
 //         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
 //         setTimeout(() => {
 //           goToNextUnsolved();
-//         }, 2000);
+//         }, 1500);
 //       } catch (error) {
 //         console.error("Error updating progress:", error);
 //       }
@@ -150,21 +185,18 @@
 //   };
 
 //   return (
-//     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-gray-100 font-sans">
-//       {/* Toast Notification */}
+//     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-gray-100">
 //       {warning && (
-//         <div className="fixed top-4 right-4 z-50 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-slide-in">
+//         <div className="fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg">
 //           {warning}
 //         </div>
 //       )}
-    
 
-//       {/* Mobile Header */}
-//       <div className="md:hidden p-4 flex justify-between items-center bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-md">
-//         <h1 className="text-xl font-bold tracking-tight">Coding Platform</h1>
+//       <div className="md:hidden p-4 flex justify-between items-center bg-gray-900">
+//         <h1 className="text-xl font-bold">Coding Platform</h1>
 //         <button
 //           onClick={() => setSidebarOpen(!sidebarOpen)}
-//           className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+//           className="p-2 rounded hover:bg-gray-700"
 //         >
 //           <FiMenu className="text-2xl" />
 //         </button>
@@ -174,37 +206,44 @@
 //         {/* Sidebar */}
 //         <div
 //           className={`${
-//             sidebarOpen ? "block animate-slide-in-left" : "hidden"
-//           } md:block w-full md:w-80 bg-gray-800 rounded-2xl p-4 shadow-xl border border-gray-700 transform transition-all duration-300 md:sticky md:top-6 h-fit max-h-[calc(100vh-3rem)] overflow-y-auto scrollbar-custom`}
+//             sidebarOpen ? "block" : "hidden"
+//           } md:block w-full md:w-80 bg-gray-800 rounded-xl p-4 h-fit max-h-[90vh] overflow-y-auto`}
 //         >
 //           <div className="flex justify-between items-center mb-4">
-//             <h2 className="text-lg font-semibold text-gray-200">Problems</h2>
+//             <h2 className="text-lg font-semibold">Problems</h2>
 //             <span className="text-sm text-gray-400">
-//               {completed.length}/{problems.length} Solved
+//               {completed.length}/{problems.length}
 //             </span>
 //           </div>
 //           {problems.map((p, idx) => {
 //             const isSolved = completed.includes(p.id.toString());
 //             const isSelected = currentIdx === idx;
-//             let diffColor = "text-cyan-400";
-//             if (p.difficulty === "Hard") diffColor = "text-red-400";
-//             else if (p.difficulty === "Med.") diffColor = "text-yellow-400";
-//             else if (p.difficulty === "Easy") diffColor = "text-green-400";
+//             let diffColor =
+//               p.difficulty === "Hard"
+//                 ? "text-red-400"
+//                 : p.difficulty === "Med."
+//                 ? "text-yellow-400"
+//                 : "text-green-400";
 
 //             return (
 //               <button
 //                 key={p.id}
-//                 className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-left transition-all font-semibold hover:bg-gray-700/80 focus:outline-none border-l-4 ${
+//                 className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-left transition-all font-semibold hover:bg-gray-700/80 border-l-4 ${
 //                   isSelected
-//                     ? "bg-gray-700/80 border-blue-500 shadow-md"
+//                     ? "bg-gray-700 border-blue-500"
 //                     : "border-transparent"
 //                 }`}
 //                 onClick={() => {
 //                   setCurrentIdx(idx);
-//                   setCode(problems[idx].starterCode);
+//                   const rollNo = localStorage.getItem("rollNo");
+//                   const savedData = JSON.parse(
+//                     localStorage.getItem("savedCodes") || "{}"
+//                   );
+//                   const savedCode = savedData[`${rollNo}-${p.id}`];
+//                   setCode(savedCode || p.starterCode || "");
 //                   setResults([]);
 //                   setFinalResult("");
-//                   setEditorKey((k) => k + 1);
+//                   setEditorKey((prev) => prev + 1);
 //                   setSidebarOpen(false);
 //                 }}
 //               >
@@ -216,7 +255,7 @@
 //                   >
 //                     {isSolved ? <FiCheck /> : <FiCircle />}
 //                   </span>
-//                   <span className="text-gray-100 font-medium text-sm">
+//                   <span>
 //                     {idx + 1}. {p.title}
 //                   </span>
 //                 </div>
@@ -228,33 +267,30 @@
 //           })}
 //         </div>
 
-//         {/* Main Content */}
+//         {/* Main Panel */}
 //         <div className="flex-1 flex flex-col gap-6">
-//           {/* Problem Description */}
-//           <div className="w-full bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-700 transition-all duration-300 hover:shadow-2xl">
+//           <div className="bg-gray-800 rounded-xl p-6 shadow">
 //             <Problem problem={problems[currentIdx]} />
 //           </div>
 
-//           {/* Code Editor */}
-//           <div className="w-full bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-700">
+//           {/* Python-only notice */}
+//           <div className="mb-2 text-yellow-300 font-semibold text-sm">
+//             ✍️ Please write your solution in <b>Python</b> only
+//           </div>
+
+//           <div className="bg-gray-800 rounded-xl p-6 shadow">
 //             <Editor
-//               key={editorKey} // <-- Fix to reset code when problem changes
+//               key={editorKey}
 //               height="400px"
 //               language="python"
 //               theme="vs-dark"
 //               value={code}
-//               onChange={(value) => setCode(value)}
+//               onChange={(value) => setCode(value || "")}
 //               options={{
-//                 copyWithSyntaxHighlighting: false,
-//                 contextmenu: false,
-//                 quickSuggestions: false,
 //                 minimap: { enabled: false },
 //                 fontSize: 16,
 //                 fontFamily: "Fira Code, monospace",
 //                 lineNumbers: "on",
-//                 roundedSelection: true,
-//                 scrollBeyondLastLine: false,
-//                 padding: { top: 16, bottom: 16 },
 //               }}
 //               onMount={(editor, monaco) => {
 //                 editor.addCommand(
@@ -267,59 +303,48 @@
 //                     showWarning();
 //                   }
 //                 });
-//                 editor.onDidPaste(() => {
-//                   editor.setValue(editor.getValue());
-//                   showWarning();
-//                 });
+//                 editor.onDidPaste(() => showWarning());
 //               }}
 //             />
 
-//             {/* Action Buttons */}
-//             <div className="flex flex-wrap gap-4 mt-6">
+//             <div className="mt-4 flex gap-4 flex-wrap">
 //               <button
 //                 onClick={runCode}
-//                 disabled={isLoading}
-//                 className={`flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2.5 rounded-full shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold ${
-//                   isLoading ? "opacity-50 cursor-not-allowed" : ""
-//                 }`}
+//                 disabled={isLoading || !code || code.trim() === ""}
+//                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
 //               >
 //                 <FiPlay /> {isLoading ? "Running..." : "Run Code"}
 //               </button>
 //               <button
 //                 onClick={submitCode}
-//                 disabled={isLoading}
-//                 className={`flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2.5 rounded-full shadow-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 font-semibold ${
-//                   isLoading ? "opacity-50 cursor-not-allowed" : ""
-//                 }`}
+//                 disabled={isLoading || !code || code.trim() === ""}
+//                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
 //               >
 //                 <FiCheckCircle /> {isLoading ? "Submitting..." : "Submit Code"}
 //               </button>
 //               {completed.includes(problems[currentIdx].id.toString()) && (
 //                 <button
 //                   onClick={goToNextUnsolved}
-//                   disabled={isLoading}
-//                   className={`flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-2.5 rounded-full shadow-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-semibold ${
-//                     isLoading ? "opacity-50 cursor-not-allowed" : ""
-//                   }`}
+//                   className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
 //                 >
 //                   <FiCheckCircle /> Next
 //                 </button>
 //               )}
 //             </div>
 
-//             {/* Test Case Results */}
-//             <div className="mt-6 bg-gray-900 p-4 rounded-xl border border-gray-700">
+//             {/* Results */}
+//             <div className="mt-6">
 //               {results.length > 0 ? (
 //                 results.map((r, i) => (
 //                   <div
 //                     key={i}
-//                     className={`p-4 mb-3 rounded-xl shadow-md border transition-all duration-200 ${
+//                     className={`p-4 mb-3 rounded-lg border ${
 //                       r.pass
-//                         ? "bg-green-900/50 border-green-700"
-//                         : "bg-red-900/50 border-red-700"
-//                     } text-white`}
+//                         ? "bg-green-900 border-green-700"
+//                         : "bg-red-900 border-red-700"
+//                     }`}
 //                   >
-//                     <div className="flex items-center gap-2 font-bold text-lg">
+//                     <div className="font-bold flex items-center gap-2 text-lg">
 //                       {r.pass ? (
 //                         <FiCheckCircle className="text-green-400" />
 //                       ) : (
@@ -327,40 +352,32 @@
 //                       )}
 //                       {r.pass ? "Passed" : "Failed"} - Test Case {i + 1}
 //                     </div>
-//                     <div className="mt-2 grid grid-cols-1 gap-2 text-sm">
+//                     <div className="text-sm mt-2">
 //                       <div>
-//                         <b>Input:</b>{" "}
-//                         <span className="text-blue-300 font-mono">{r.input}</span>
+//                         <b>Input:</b> <code>{r.input}</code>
 //                       </div>
 //                       <div>
-//                         <b>Expected:</b>{" "}
-//                         <span className="text-green-300 font-mono">
-//                           {r.output}
-//                         </span>
+//                         <b>Expected:</b> <code>{r.output}</code>
 //                       </div>
 //                       <div>
-//                         <b>Got:</b>{" "}
-//                         <span className="text-yellow-300 font-mono">
-//                           {r.got.trim() || "<empty output>"}
-//                         </span>
+//                         <b>Got:</b> <code>{r.got.trim() || "<empty>"}</code>
 //                       </div>
 //                     </div>
 //                   </div>
 //                 ))
 //               ) : (
 //                 <div className="text-gray-400 text-center">
-//                   {isLoading ? "Running code..." : "Run code to see results..."}
+//                   Run code to see results...
 //                 </div>
 //               )}
 //             </div>
 
-//             {/* Final Result */}
 //             {finalResult && (
 //               <div
-//                 className={`mt-6 p-4 rounded-xl text-white text-center font-bold text-lg shadow-md border transition-all duration-200 ${
-//                   finalResult.includes("All test cases passed")
-//                     ? "bg-green-600/80 border-green-700"
-//                     : "bg-red-600/80 border-red-700"
+//                 className={`mt-4 text-center font-bold text-lg rounded-xl p-4 ${
+//                   finalResult.includes("passed")
+//                     ? "bg-green-700 text-white"
+//                     : "bg-red-700 text-white"
 //                 }`}
 //               >
 //                 {finalResult}
@@ -372,7 +389,6 @@
 //     </div>
 //   );
 // }
-
 import Editor from "@monaco-editor/react";
 import Problem from "./Problem";
 import { useEffect, useState } from "react";
@@ -413,7 +429,6 @@ export default function IDE() {
         );
         const idx = firstUnsolvedIndex !== -1 ? firstUnsolvedIndex : 0;
 
-        // ---- Check if saved code exists ----
         const savedData = JSON.parse(localStorage.getItem("savedCodes") || "{}");
         const savedCode = savedData[`${rollNo}-${problems[idx].id}`];
         setCode(savedCode || problems[idx].starterCode || "");
@@ -532,7 +547,6 @@ output_text
       const problemId = problems[currentIdx].id;
       const rollNo = localStorage.getItem("rollNo");
 
-      // ---- Save student's code locally ----
       const savedData = JSON.parse(localStorage.getItem("savedCodes") || "{}");
       savedData[`${rollNo}-${problemId}`] = code;
       localStorage.setItem("savedCodes", JSON.stringify(savedData));
@@ -591,6 +605,11 @@ output_text
           {problems.map((p, idx) => {
             const isSolved = completed.includes(p.id.toString());
             const isSelected = currentIdx === idx;
+            const isUnlocked =
+              isSolved ||
+              idx === 0 ||
+              completed.includes(problems[idx - 1]?.id.toString());
+
             let diffColor =
               p.difficulty === "Hard"
                 ? "text-red-400"
@@ -601,12 +620,14 @@ output_text
             return (
               <button
                 key={p.id}
-                className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-left transition-all font-semibold hover:bg-gray-700/80 border-l-4 ${
+                disabled={!isUnlocked}
+                className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-left transition-all font-semibold border-l-4 ${
                   isSelected
                     ? "bg-gray-700 border-blue-500"
                     : "border-transparent"
-                }`}
+                } ${!isUnlocked ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-700/80"}`}
                 onClick={() => {
+                  if (!isUnlocked) return;
                   setCurrentIdx(idx);
                   const rollNo = localStorage.getItem("rollNo");
                   const savedData = JSON.parse(
@@ -646,7 +667,6 @@ output_text
             <Problem problem={problems[currentIdx]} />
           </div>
 
-          {/* Python-only notice */}
           <div className="mb-2 text-yellow-300 font-semibold text-sm">
             ✍️ Please write your solution in <b>Python</b> only
           </div>
@@ -695,17 +715,8 @@ output_text
               >
                 <FiCheckCircle /> {isLoading ? "Submitting..." : "Submit Code"}
               </button>
-              {completed.includes(problems[currentIdx].id.toString()) && (
-                <button
-                  onClick={goToNextUnsolved}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                >
-                  <FiCheckCircle /> Next
-                </button>
-              )}
             </div>
 
-            {/* Results */}
             <div className="mt-6">
               {results.length > 0 ? (
                 results.map((r, i) => (

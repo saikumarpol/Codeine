@@ -157,9 +157,7 @@ output_text
           {warning}
         </div>
       )}
-      <div className="p-2 text-yellow-300 text-center font-semibold text-sm">
-        ✍️ Please write your solution in <b>Python</b> only
-      </div>
+    
 
       {/* Mobile Header */}
       <div className="md:hidden p-4 flex justify-between items-center bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-md">

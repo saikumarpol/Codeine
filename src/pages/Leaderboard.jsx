@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -10,7 +8,6 @@ export default function Leaderboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortOrder, setSortOrder] = useState("desc");
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const quotes = [
@@ -18,62 +15,50 @@ export default function Leaderboard() {
     "First, solve the problem. Then, write the code.",
     "Dream in code, build in passion, deploy in success.",
     "Your only limit is your imagination — and maybe semicolons.",
-    "Every bug you fix is a step closer to mastery."
+    "Every bug you fix is a step closer to mastery.",
   ];
   const [quoteIndex, setQuoteIndex] = useState(0);
 
   // Rotate quotes every 5s
   useEffect(() => {
-    const interval = setInterval(() => {
-      setQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
-    }, 5000);
+    const interval = setInterval(
+      () => setQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length),
+      5000
+    );
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch leaderboard
+  // Fetch leaderboard (auto refresh every 30s)
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         const res = await axios.get("https://ide-backend-0agn.onrender.com/leaderboard");
         setData(res.data);
-        setLastUpdated(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+        setLastUpdated(
+          new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+        );
       } catch (err) {
         setError("Failed to fetch leaderboard data.");
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchData();
+    const interval = setInterval(fetchData, 30000); // refresh every 30 seconds
+    return () => clearInterval(interval);
   }, []);
 
-  // Sorting + filtering with tie-break
+  // Filter by search term (backend handles sorting)
   const filteredData = useMemo(() => {
-    let result = [...data];
-    if (searchTerm) {
-      result = result.filter(
-        (u) =>
-          u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    result.sort((a, b) => {
-      // 1. problemsSolved desc
-      if (a.problemsSolved !== b.problemsSolved) {
-        return b.problemsSolved - a.problemsSolved;
-      }
-      // 2. streak desc
-      if (a.streak !== b.streak) {
-        return b.streak - a.streak;
-      }
-      // 3. earliest submission wins
-      if (a.lastSolvedDate && b.lastSolvedDate) {
-        return new Date(a.lastSolvedDate) - new Date(b.lastSolvedDate);
-      }
-      return 0;
-    });
-    return result;
-  }, [data, searchTerm, sortOrder]);
+    if (!searchTerm) return data;
+    return data.filter(
+      (u) =>
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [data, searchTerm]);
 
   const getMedal = (rank) => {
     if (rank === 1) return "🥇";
@@ -133,6 +118,7 @@ export default function Leaderboard() {
                   key={i}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
                   className={`relative flex flex-col items-center text-center bg-gray-900/60 backdrop-blur-md rounded-xl shadow-lg px-6 pt-10 pb-6 border w-full sm:w-auto ${
                     i === 0
                       ? "border-yellow-400 sm:h-[230px]"
@@ -147,7 +133,13 @@ export default function Leaderboard() {
                   <p className="mt-3 font-semibold text-xl">{u.name}</p>
                   <p className="text-gray-400 text-sm">Roll No: {u.rollNo}</p>
                   <p className="text-green-400 mt-1">{u.problemsSolved} Solved</p>
-                  <p className="text-orange-400 text-sm">🔥 Streak: {u.streak}</p>
+                  <p
+                    className={`text-sm ${
+                      u.streak > 0 ? "text-orange-400" : "text-gray-400"
+                    }`}
+                  >
+                    🔥 Streak: {u.streak}
+                  </p>
                   <span className="absolute -top-5 text-3xl">{getMedal(i + 1)}</span>
                 </motion.div>
               ))}
@@ -162,7 +154,7 @@ export default function Leaderboard() {
                     <th className="px-4 py-3 text-blue-300">Name</th>
                     <th className="px-4 py-3 text-green-300">Roll No</th>
                     <th className="px-4 py-3 text-pink-300">Solved</th>
-                    <th className="px-4 py-3 text-orange-300">Streak🔥</th>
+                    <th className="px-4 py-3 text-orange-300">Streak 🔥</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -171,6 +163,7 @@ export default function Leaderboard() {
                       key={i}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
                       className="hover:bg-gray-800/40 transition"
                     >
                       <td className="px-4 py-3">{getMedal(i + 1)}</td>
@@ -182,7 +175,13 @@ export default function Leaderboard() {
                       </td>
                       <td className="px-4 py-3">{u.rollNo}</td>
                       <td className="px-4 py-3">{u.problemsSolved}</td>
-                      <td className="px-4 py-3">{u.streak}</td>
+                      <td
+                        className={`px-4 py-3 ${
+                          u.streak > 0 ? "text-orange-400" : "text-gray-400"
+                        }`}
+                      >
+                        🔥 {u.streak}
+                      </td>
                     </motion.tr>
                   ))}
                 </tbody>
@@ -207,4 +206,3 @@ export default function Leaderboard() {
     </div>
   );
 }
-
